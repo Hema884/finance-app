@@ -9,26 +9,45 @@ router.get('/', protect, async (req, res) => {
     const accounts = await BankAccount.find({ user: req.user._id });
     res.json(accounts);
   } catch (error) {
+    console.error('Error fetching accounts:', error);
     res.status(500).json({ message: 'Server error' });
   }
 });
 
-// Add a new bank account manually
-router.post('/manual', protect, async (req, res) => {
+// Add a new bank account (root endpoint)
+router.post('/', protect, async (req, res) => {
+  console.log('Received POST request to create bank account');
+  console.log('Request body:', req.body);
+  console.log('User:', req.user);
+  
   try {
     const { bankName, accountType, accountNumber, balance } = req.body;
     
+    // Validate required fields
+    if (!bankName || !accountType || !accountNumber) {
+      console.log('Missing required fields');
+      return res.status(400).json({ 
+        message: 'Please provide bankName, accountType, and accountNumber',
+        received: { bankName, accountType, accountNumber, balance }
+      });
+    }
+
     const account = await BankAccount.create({
       user: req.user._id,
       bankName,
       accountType,
       accountNumber,
-      balance
+      balance: balance || 0
     });
 
+    console.log('Created account:', account);
     res.status(201).json(account);
   } catch (error) {
-    res.status(500).json({ message: 'Server error' });
+    console.error('Error creating bank account:', error);
+    res.status(500).json({ 
+      message: 'Server error',
+      error: error.message 
+    });
   }
 });
 
